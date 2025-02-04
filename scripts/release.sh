@@ -38,5 +38,5 @@ git push origin refs/tags/v"$VERSION"
 git push
 
 echo -e "\033[1;92m You are ready to publish!"
-echo -e "\033[1;95m npm publish"
+echo -e "\033[1;95m npm publish --access public"
 fi
