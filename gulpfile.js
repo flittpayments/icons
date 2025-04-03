@@ -1,4 +1,5 @@
 const { task, src, dest, series, parallel } = require('gulp')
+const svg2png = require('./gulp-svg2png.js')
 const svgo = require('./gulp-svgo.js')
 const addViewBox = require('./svgo-add-viewbox.js')
 const fsp = require('fs').promises
@@ -60,8 +61,19 @@ const svgoConfig = {
   ],
 }
 
+const convertToPng = (path, out, size) =>
+  src(path)
+    .pipe(svg2png({ width: size, height: size, fit: 'inside' }))
+    .pipe(dest(out + size))
+
 const compressSvg = (path, out) =>
   src(path).pipe(svgo(svgoConfig)).pipe(dest(out))
+
+task('svg2png:32', () => convertToPng(svgPath, 'dist/png/', 32))
+
+task('svg2png:64', () => convertToPng(svgPath, 'dist/png/', 64))
+
+task('svg2png:128', () => convertToPng(svgPath, 'dist/png/', 128))
 
 task('svg', () => compressSvg(svgPath, 'dist/svg'))
 
@@ -100,12 +112,33 @@ task('clean', () =>
     .then(() => fsp.mkdir('dist/'))
 )
 
-task('all', () => compressSvg(allPath, 'dist/all/svg'))
+task('all:svg', () => compressSvg(allPath, 'dist/all/svg'))
+
+task('all:svg2png:32', () => convertToPng(allPath, 'dist/all/png/', 32))
+
+task('all:svg2png:64', () => convertToPng(allPath, 'dist/all/png/', 64))
+
+task('all:svg2png:128', () => convertToPng(allPath, 'dist/all/png/', 128))
+
+task(
+  'all',
+  parallel('all:svg', 'all:svg2png:32', 'all:svg2png:64', 'all:svg2png:128')
+)
 
 task(
   'default',
   series(
     'clean',
-    parallel('version', 'svg', 'favicon', 'fonts', 'flags', 'all')
+    parallel(
+      'version',
+      'svg',
+      'favicon',
+      'fonts',
+      'flags',
+      'svg2png:32',
+      'svg2png:64',
+      'svg2png:128',
+      'all'
+    )
   )
 )
